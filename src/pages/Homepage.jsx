@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import axios from 'axios'
 import { Puff } from 'react-loader-spinner'
+import {useNavigate} from 'react-router-dom'
+import { ArticleContext } from '../context/ArticleContext'
 
 // Api key
 const apiKey = import.meta.env.VITE_YOUR_API_KEY
 
 const Homepage = () => {
+    // set up the article context
+    const { setSelectedArticle } = useContext(ArticleContext)
     // useState definitions for all our inputs:
     const [searchTerm, setSearchTerm] = useState('')
     const [country, setCountry] = useState('us')
@@ -15,6 +19,8 @@ const Homepage = () => {
     const [news, setNews] = useState([])
     // set a state for loading
     const [loading, setLoading] = useState(true)
+    // define useNavigate
+    const navigate = useNavigate()
 
     // useEffect - api call inside
     useEffect(() => {
@@ -24,8 +30,14 @@ const Homepage = () => {
                 const response = await axios.get(
                     `https://newsapi.org/v2/top-headlines?country=${country}&language=${language}&category=${topic}&q=${searchTerm}&apiKey=${apiKey}`
                 )
+                const articles = response.data.articles.map((article) => {
+                    return {
+                        ...article,
+                        onSelect: () => setSelectedArticle(article)
+                    }
+                })
                 console.log(response.data.articles)
-                setNews(response.data.articles)
+                setNews(articles)
                 setLoading(false)
             } catch (error) {
                 console.log(error);
@@ -116,7 +128,11 @@ const Homepage = () => {
                        <img src={item.urlToImage} alt={item.title}/>
                        <p>{item.description}</p>
                        <p>{item.publishedAt}</p>
-                       <button>Read More</button>
+                       <button onClick={() => {
+                           item.onSelect()
+                           navigate('/article/')
+                           }
+                        }>Read More</button>
                    </div>
                )) 
             )
